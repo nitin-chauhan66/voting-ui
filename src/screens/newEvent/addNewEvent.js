@@ -1,23 +1,63 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Container,Row,Col, Button, } from 'react-bootstrap';
+import { useHistory } from 'react-router-dom';
+import Web3 from 'web3';
+import {VOTING_ADDRESS,VOTING_CONTRACT_ABI} from "./../../config";
+import AddOptions from './AddOptions';
 
 const AddNewEvent = () => {
     const [account,setAccount] = useState('0x');
-    const [startTime,setStartTime] = useState(new Date().getTime());
-    const [endTime,setEndTime] = useState('');
-    const [options,setOption] = useState([1,2]);
-
-    const AddOption = () => {
-        const id = options.length+1;
-        setOption([...options,id])
+    const [title,setTitle] = useState('defaultName');
+    const [isEventCreated,setIsEventCreated] = useState(false);
+    const [electionAdress,setElectionAddress] = useState('');
+    const [eventId,setEventId] = useState('');
+    const history = useHistory();
+    const getAccount = async () =>{
+        if (!ethEnabled()) {
+            alert("Please install MetaMask to use this dApp!");
+          }else{
+            const account = await window.web3.eth.getAccounts();
+            setAccount(account[0]);
+          }
     }
-    const deleteOption = (id) => {
-        console.log(id);
-        if(options.length>2){
-            const newIds = [...options]
-            newIds.splice(id-1,1)
-            setOption(newIds)
+    useEffect(()=>{
+        getAccount();
+    },[])
+    useEffect(()=>{
+        if(isEventCreated){
+            history.push('/addCandidates',{address:electionAdress,eventId})
         }
+    },[isEventCreated])
+    const ethEnabled = () => {
+        if (window.ethereum) {
+          window.web3 = new Web3(window.ethereum);
+          window.ethereum.enable();
+          return true;
+        }
+        return false;
+      }
+      console.log(title);
+    const addEvent = async (e) =>{
+        e.preventDefault();
+        if (!ethEnabled()) {
+            alert("Please install MetaMask to use this dApp!");
+          }else{
+            const account = await window.web3.eth.getAccounts();
+            const web3 = new Web3(Web3.givenProvider);
+            const VotingContract = new web3.eth.Contract(VOTING_CONTRACT_ABI,VOTING_ADDRESS,{from :account[0]});
+            VotingContract.methods.addNewEvent(title).send();
+            VotingContract.events.newEventCreated({}, async (error,event)=>{
+                console.log(event);
+                if(event.event==='newEventCreated'){
+                    const canName = await VotingContract.methods.events_array(event.returnValues.id).call();
+                    setTitle('');
+                    setElectionAddress(canName.smartContractId)
+                    setEventId(canName.eventId)
+                    setIsEventCreated(true);
+                }
+            })
+          }
+
     }
     return (
         <Container>
@@ -31,31 +71,10 @@ const AddNewEvent = () => {
                 <form className="w-30 p-3">
                 <div className="form-group">
                     <label for="title">Event title</label>
-                    <input type="text" className="form-control" id="title" aria-describedby="title" placeholder="Enter Event Title"/>
+                    <input type="text" value={title} onChange={(e)=>setTitle(e.target.value)} className="form-control" id="title" aria-describedby="title" placeholder="Enter Event Title"/>
                 </div>
-                <div className="form-group">
-                    <label for="organiser">Organiser</label>
-                    <input type="text" className="form-control" id="organiser" placeholder="Organiser name"/>
-                </div>
-                <div className="form-group form-inline">
-                    <label for="organiser">Start Date: </label>
-                    <input type="datetime-local" className="form-control ml-2" id="organiser" placeholder="Organiser name"/>
-                    <label for="organiser" className="ml-2">End Date: </label>
-                    <input type="datetime-local"  className="form-control ml-2" id="organiser" placeholder="Organiser name"/>
-                </div>
-                <label for="1" className="mr-2">OPTIONS</label>
-                {options.map((id)=>{
-                    return(
-                        <div className="form-group form-inline">
-                            <label for={id} className="mr-2">{id}</label>
-                            <input type="text" className="form-control" id={id}/>
-                            <div onClick={()=>deleteOption(id)}>delete</div>
-                        </div>
-                    )
-                })}
-                <button className="btn btn-primary" onClick={AddOption}>Add option</button>
                 <Row className="justify-content-center">
-                <button type="submit" className="btn btn-primary mt-2">Create Event</button>
+                <button onClick={(e)=>addEvent(e)} className="btn btn-primary mt-2">Create Event</button>
                 </Row>
                 </form>
                 </Col>
