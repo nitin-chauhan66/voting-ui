@@ -29,10 +29,24 @@ const getOptions = async () =>{
     const res = await ElectionContract.methods.candidates(i).call();
     candidatesArray = [...candidatesArray,{id:res.id,name:res.name,voteCount:res.voteCount}]
   }
+  ElectionContract.events.votedEvent({},async (error,event)=>{
+    if(event.event==='votedEvent'){
+        let candidates = [];
+        for (let i=1;i<=count;i++){
+        const res = await ElectionContract.methods.candidates(i).call();
+        candidates = [...candidates,{id:res.id,name:res.name,voteCount:res.voteCount}]
+        }
+        setCandidates(candidates);
+    }
+});
+  ElectionContract.methods.isOnGoing().call().then((res=>{
+    setEventStatus(res);
+  }));
   setCandidates(candidatesArray);
 }
     useEffect(()=>{
         getAccount();
+        getOptions();
     },[])
 
     const ethEnabled = () => {
@@ -53,7 +67,6 @@ const getOptions = async () =>{
           setOptionText('');
           getOptions(ElectionContract)
         })
-
       }
     }
     const onStart = () =>{
@@ -79,7 +92,17 @@ const getOptions = async () =>{
                             <button onClick={(e)=>onClickAdd(e)} className="btn btn-primary mt-2 ml-2">Add</button>
                 </div>
                 </Row>
-
+                <Row key={'table'} className="bg-info mb-2 text-center">
+                        <Col>
+                        {'Candidate Name'}
+                        </Col>
+                        <Col>
+                        {'Vote Count'}
+                        </Col>
+                        <Col>
+                        {'Candidate Id'}
+                        </Col>
+                </Row>
                 {candidates.map((candidate)=>{
                   return (
                     <Row key={candidate.id} className="bg-info mb-2 text-center">

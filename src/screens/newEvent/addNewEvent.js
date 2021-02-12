@@ -59,6 +59,25 @@ const AddNewEvent = () => {
           }
 
     }
+
+    const ViewEvent = async (e) => {
+        e.preventDefault();
+        if (!ethEnabled()) {
+            alert("Please install MetaMask to use this dApp!");
+          }else{
+        if(eventId!==""){
+            const account = await window.web3.eth.getAccounts();
+            const web3 = new Web3(Web3.givenProvider);
+            const VotingContract = new web3.eth.Contract(VOTING_CONTRACT_ABI,VOTING_ADDRESS,{from :account[0]});
+         
+            const canName = await VotingContract.methods.events_array(eventId).call();
+            setTitle('');
+            setElectionAddress(canName.smartContractId)
+            history.push('/addCandidates',{address:canName.smartContractId,eventId})
+        }
+    }
+           
+    }
     return (
         <Container>
              <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -75,6 +94,20 @@ const AddNewEvent = () => {
                 </div>
                 <Row className="justify-content-center">
                 <button onClick={(e)=>addEvent(e)} className="btn btn-primary mt-2">Create Event</button>
+                </Row>
+                </form>
+                </Col>
+            </Row>
+            <Row>
+                <Col>
+                <h3 className="text-center text-muted">View Event</h3>
+                <form className="w-30 p-3">
+                <div className="form-group">
+                    <label for="title">Enter ID</label>
+                    <input type="text" value={eventId} onChange={(e)=>setEventId(e.target.value)} className="form-control" id="title" aria-describedby="title" placeholder="Enter Event Id"/>
+                </div>
+                <Row className="justify-content-center">
+                <button onClick={(e)=>ViewEvent(e)} className="btn btn-primary mt-2">View Event</button>
                 </Row>
                 </form>
                 </Col>

@@ -35,7 +35,7 @@ const VotingEvent = (props) => {
                 }
             })
             ElectionContract.methods.vote(sel).send().then(()=>{
-                history.push('/eventDashboard')
+                history.push('/eventDashboard',{state:{eventId}});
             });
         }else{
             alert('Please select a option')
@@ -157,7 +157,7 @@ const VotingEvent = (props) => {
                             
                         })}
                         <Col className="text-center mt-5">
-                            <Button variant="primary" onClick={castVote}>Click to cast vote</Button>
+                            <Button variant="primary" onClick={castVote}>Click to cast the vote</Button>
                         </Col>
                         </form>
                     </Card.Body>
